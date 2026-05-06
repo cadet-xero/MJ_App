@@ -1,0 +1,68 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HeeHee Score</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app">
+    <h1 class="hero-title">HeeHee Score</h1>
+    <p>How close is your iconic heehee?</p>
+
+    <section class="card">
+      <label for="referenceAudio">HeeHee to copy:</label>
+      <audio id="referenceAudio" controls preload="auto"></audio>
+
+      <div class="controls">
+        <button id="startRecordBtn" type="button">Start Recording</button>
+        <button id="stopRecordBtn" type="button" disabled>Stop Recording</button>
+        <button id="playRecordBtn" type="button" disabled>Play My HeeHee</button>
+        <button id="clearRecordBtn" class="clear" type="button" disabled>Clear My HeeHee</button>
+      </div>
+      <p id="recordingIndicator" class="recording-indicator" aria-live="polite">
+        <span class="dot" aria-hidden="true"></span>
+        Recording now...
+        <span id="recordingCountdown" class="recording-countdown"></span>
+      </p>
+
+      <audio id="recordedAudio" controls></audio>
+
+      <button id="analyzeBtn" class="analyze" type="button" disabled>Analyze HeeHee</button>
+      <button id="showResultBtn" type="button" disabled>See Results</button>
+      <p id="status" class="status">Waiting for your performance.</p>
+
+      <div class="save-score-row">
+        <input id="playerNameInput" type="text" maxlength="40" placeholder="Enter your name" />
+        <button id="saveScoreBtn" type="button">Save Score</button>
+        <button id="showLeaderboardBtn" type="button">See Rankings</button>
+      </div>
+      <p id="actionStatus" class="action-status hidden" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        <span id="actionStatusText">Working...</span>
+      </p>
+    </section>
+  </main>
+
+  <div id="resultModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+    <div class="modal-card">
+      <h2 id="resultTitle">HeeHee Result</h2>
+      <p id="resultCaption" class="result-caption">Placeholder result text</p>
+      <img id="mjImage" src="assets/michael-jackson.png" alt="Michael Jackson" />
+      <p id="scoreText" class="score">0%</p>
+      <button id="closeModalBtn" type="button">Close</button>
+    </div>
+  </div>
+
+  <div id="leaderboardModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="leaderboardTitle">
+    <div class="modal-card">
+      <h2 id="leaderboardTitle">Top HeeHee Performers</h2>
+      <ol id="leaderboardList" class="leaderboard-list"></ol>
+      <button id="closeLeaderboardModalBtn" type="button">Close</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

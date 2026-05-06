@@ -1,0 +1,460 @@
+﻿:root {
+  --bg: #f8f4e8;
+  --card: #fffef9;
+  --ink: #1f1f1f;
+  --accent: #2e7d32;
+  --danger: #c62828;
+  --line: #ded7c8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 15% 15%, rgba(255,248,220,0.65) 0%, transparent 35%),
+    radial-gradient(circle at 85% 20%, rgba(255,228,196,0.6) 0%, transparent 30%),
+    url("assets/MJ_aura.jpg") center/cover no-repeat;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.app {
+  width: min(700px, 100%);
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  letter-spacing: 0.03em;
+}
+
+.subtitle {
+  margin-top: 0.4rem;
+  margin-bottom: 1.2rem;
+}
+
+.hero-title,
+.hero-subtitle {
+  color: black;
+  -webkit-text-stroke: 1.5px #fff;
+  text-shadow:
+    1px 1px 0 #fff,
+   -1px 1px 0 #fff,
+    1px -1px 0 #fff,
+   -1px -1px 0 #fff;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+label,
+.hint,
+.status {
+  display: block;
+  margin-bottom: 0.6rem;
+}
+
+.hint {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0.8rem 0;
+}
+
+.recording-indicator {
+  display: none;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--danger);
+  font-weight: 700;
+  margin: 0.3rem 0 0.7rem;
+}
+
+.recording-indicator.active {
+  display: inline-flex;
+}
+
+.recording-indicator .dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: var(--danger);
+  box-shadow: 0 0 0 0 rgba(198, 40, 40, 0.5);
+  animation: pulse-dot 1s infinite;
+}
+
+.recording-countdown {
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+button,
+input[type="file"] {
+  font: inherit;
+}
+
+input[type="text"] {
+  font: inherit;
+}
+
+button {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 10px;
+  padding: 0.55rem 0.85rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+button.analyze {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+  font-weight: 700;
+  margin-top: 0.8rem;
+}
+
+button.clear {
+  background: var(--danger);
+  color: #fff;
+  border-color: transparent;
+}
+
+audio {
+  width: 100%;
+  margin-top: 0.2rem;
+}
+
+.status {
+  margin-top: 0.8rem;
+  min-height: 1.3em;
+}
+
+.leaderboard {
+  margin-top: 1rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--line);
+}
+
+.leaderboard h3 {
+  margin: 0 0 0.6rem;
+}
+
+.save-score-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.save-score-row input {
+  flex: 1 1 180px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+}
+
+.action-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.2rem 0 0.6rem;
+  color: #1f2937;
+  font-weight: 700;
+}
+
+.action-status.hidden {
+  display: none;
+}
+
+.spinner {
+  width: 0.95rem;
+  height: 0.95rem;
+  border: 2px solid #d0d0d0;
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+.leaderboard-list {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.leaderboard-list li {
+  margin-bottom: 0.35rem;
+}
+
+.leaderboard-empty {
+  color: #666;
+}
+
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.4rem 0.55rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.rank-avatar {
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: #fff;
+}
+
+.rank-spacer {
+  width: 1.7rem;
+  height: 1.7rem;
+}
+
+.rank-number {
+  font-weight: 800;
+  min-width: 2rem;
+}
+
+.rank-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rank-score {
+  font-weight: 800;
+  justify-self: end;
+}
+
+.leaderboard-row.top-1 {
+  grid-template-columns: auto auto 1fr auto;
+  background: linear-gradient(90deg, rgba(255, 215, 0, 0.35), rgba(255, 245, 196, 0.6));
+  border: 1px solid rgba(184, 134, 11, 0.45);
+}
+
+.leaderboard-row.top-2 {
+  grid-template-columns: auto auto 1fr auto;
+  background: linear-gradient(90deg, rgba(192, 192, 192, 0.35), rgba(238, 238, 238, 0.6));
+  border: 1px solid rgba(128, 128, 128, 0.45);
+}
+
+.leaderboard-row.top-3 {
+  grid-template-columns: auto auto 1fr auto;
+  background: linear-gradient(90deg, rgba(205, 127, 50, 0.3), rgba(243, 219, 194, 0.6));
+  border: 1px solid rgba(139, 90, 43, 0.45);
+}
+
+.leaderboard-row.top-1,
+.leaderboard-row.top-2,
+.leaderboard-row.top-3 {
+  min-height: 3rem;
+  padding-top: 0.55rem;
+  padding-bottom: 0.55rem;
+}
+
+.leaderboard-row.top-1 .rank-avatar,
+.leaderboard-row.top-2 .rank-avatar,
+.leaderboard-row.top-3 .rank-avatar {
+  width: 2.45rem;
+  height: 2.45rem;
+}
+
+.leaderboard-row.your-rank-row {
+  grid-template-columns: auto 1fr auto;
+  margin-top: 0.45rem;
+  border-top: 1px dashed rgba(31, 31, 31, 0.25);
+  padding-top: 0.65rem;
+  background: rgba(46, 125, 50, 0.16);
+  border-color: rgba(46, 125, 50, 0.5);
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-card {
+  width: min(540px, 100%);
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.4rem;
+  text-align: center;
+  animation: pop 220ms ease-out;
+}
+
+.modal-card img {
+  width: min(240px, 90%);
+  display: block;
+  margin: 0.4rem auto 0;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+}
+
+.score {
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: var(--danger);
+}
+
+.result-caption {
+  margin: 0.35rem 0 0.75rem;
+  font-size: 0.96rem;
+  color: #444;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-dot {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(198, 40, 40, 0.6);
+  }
+  70% {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 11px rgba(198, 40, 40, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(198, 40, 40, 0);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    padding: 0.75rem;
+    background:
+      radial-gradient(circle at 15% 15%, rgba(255,248,220,0.65) 0%, transparent 35%),
+      radial-gradient(circle at 85% 20%, rgba(255,228,196,0.6) 0%, transparent 30%),
+      url("assets/MJ_aura.jpg") center/cover no-repeat;
+  }
+
+  .app {
+    width: 100%;
+  }
+
+  .card {
+    padding: 0.85rem;
+    border-radius: 12px;
+  }
+
+  .controls,
+  .save-score-row {
+    gap: 0.5rem;
+  }
+
+  .controls button,
+  .save-score-row button {
+    flex: 1 1 calc(50% - 0.5rem);
+    min-height: 44px;
+  }
+
+  .save-score-row input {
+    flex: 1 1 100%;
+    min-height: 44px;
+  }
+
+  button.analyze,
+  #showResultBtn {
+    width: 100%;
+    min-height: 46px;
+  }
+
+  .modal-card {
+    width: min(96vw, 540px);
+    padding: 1rem;
+  }
+
+  .modal-card img {
+    width: min(300px, 94%);
+  }
+
+  .leaderboard-row {
+    grid-template-columns: auto auto 1fr auto;
+    gap: 0.45rem;
+    padding: 0.4rem;
+  }
+
+  .leaderboard-row.top-1,
+  .leaderboard-row.top-2,
+  .leaderboard-row.top-3 {
+    min-height: 2.7rem;
+  }
+
+  .leaderboard-row.top-1 .rank-avatar,
+  .leaderboard-row.top-2 .rank-avatar,
+  .leaderboard-row.top-3 .rank-avatar {
+    width: 2.1rem;
+    height: 2.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: clamp(1.55rem, 8vw, 2rem);
+  }
+
+  .hero-subtitle {
+    font-size: 0.95rem;
+  }
+
+  .controls button,
+  .save-score-row button {
+    flex: 1 1 100%;
+  }
+
+  .rank-name {
+    max-width: 42vw;
+  }
+}
