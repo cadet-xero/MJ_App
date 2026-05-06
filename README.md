@@ -29,7 +29,7 @@ Database file: `data/leaderboard.db`
 
 For public launch, add:
 
-- CAPTCHA verification on `submit-score` (Cloudflare Turnstile or reCAPTCHA).
+- Optional: CAPTCHA verification on `submit-score` if abuse becomes a problem.
 - Stricter abuse controls (IP/device limits, bot detection).
 
 ## Recommended public hosting
@@ -43,6 +43,10 @@ Good options:
 Render quick-start guide for this project:
 
 - `DEPLOY_RENDER.md`
+
+Free-tier note:
+
+- Current `render.yaml` is configured for Render Free plan (no persistent disk), so leaderboard data can reset.
 
 Privacy tips:
 

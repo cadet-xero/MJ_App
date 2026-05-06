@@ -1,6 +1,7 @@
 # Deploy On Render (Public Domain)
 
 This app is ready to deploy on Render as a public web service.
+This guide is configured for **Render Free tier** (no persistent disk).
 
 ## 1. Push to GitHub
 
@@ -21,16 +22,14 @@ This app is ready to deploy on Render as a public web service.
 5. Click **Apply**.
 
 This creates:
-- A Node web service
-- A persistent disk mounted at `/var/data` for leaderboard DB
+- A Node web service on the Free plan
 
 ## 3. Verify Environment
 
 In Render service settings, confirm:
 - `NODE_ENV=production`
-- `DB_PATH=/var/data/leaderboard.db`
 
-These are already defined in `render.yaml`, but verify after first deploy.
+This is already defined in `render.yaml`, but verify after first deploy.
 
 ## 4. First Smoke Test
 
@@ -57,4 +56,6 @@ Expected JSON:
 - This setup does not use your home server/IP.
 - Static assets are served from `public/` only.
 - Server code and database files are not web-exposed.
-- Leaderboard data persists across restarts via mounted disk.
+- On Free tier, the filesystem is ephemeral.
+- Leaderboard data may reset on redeploy/restart/spin-down wake cycles.
+- Free web services can spin down when idle, so first request after idle may be slower.
