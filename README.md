@@ -15,10 +15,11 @@ Frontend files are served from `public/` only.
 
 ## Server-side API
 
-- `POST /api/submit-score`: receives name + recorded audio, computes score on the server, saves to SQLite.
+- `POST /api/submit-score`: receives name + recorded audio, computes score on the server, stores result in memory.
 - `GET /api/leaderboard`: returns top performers.
+- `POST /api/analyze-score`: computes score on server before save.
 
-Database file: `data/leaderboard.db`
+On the current free-tier setup, leaderboard storage is in-memory (ephemeral).
 
 ## Security posture
 

@@ -5,7 +5,6 @@ const express = require("express");
 const multer = require("multer");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
-const Database = require("better-sqlite3");
 const ffmpegPath = require("ffmpeg-static");
 const { compareAudio } = require("./server/scoring");
 
@@ -13,11 +12,10 @@ const PORT = Number(process.env.PORT || 8080);
 const SAMPLE_RATE = 16000;
 const PUBLIC_DIR = path.join(__dirname, "public");
 const REFERENCE_AUDIO_PATH = path.join(PUBLIC_DIR, "assets", "Michael Jackson Hee Hee.mp3");
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, "data", "leaderboard.db");
 const MAX_NAME_LENGTH = 40;
 const LEADERBOARD_MAX_SIZE = 10;
 const MAX_UPLOAD_MB = 4;
-const MAX_RECORDING_SECONDS = 5;
+const MAX_RECORDING_SECONDS = 10;
 const ALLOWED_AUDIO_MIME_TYPES = new Set([
   "audio/webm",
   "audio/ogg",
@@ -46,58 +44,43 @@ const upload = multer({
 });
 
 let referenceSamples = null;
-let db = null;
+let scores = [];
+let nextScoreId = 1;
 
-function initDatabase() {
-  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
-  db = new Database(DB_PATH);
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS scores (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      score INTEGER NOT NULL,
-      created_at INTEGER NOT NULL
-    );
-  `);
+function compareEntries(a, b) {
+  if (b.score !== a.score) {
+    return b.score - a.score;
+  }
+  if (a.createdAt !== b.createdAt) {
+    return a.createdAt - b.createdAt;
+  }
+  return a.id - b.id;
 }
 
 function getTopLeaderboard(limit = LEADERBOARD_MAX_SIZE) {
-  const stmt = db.prepare(`
-    SELECT name, score, created_at AS createdAt
-    FROM scores
-    ORDER BY score DESC, created_at ASC
-    LIMIT ?
-  `);
-  return stmt.all(limit);
+  return scores
+    .slice()
+    .sort(compareEntries)
+    .slice(0, limit)
+    .map((entry) => ({
+      name: entry.name,
+      score: entry.score,
+      createdAt: entry.createdAt,
+    }));
 }
 
 function insertScore(name, score) {
-  const stmt = db.prepare(`
-    INSERT INTO scores (name, score, created_at)
-    VALUES (?, ?, ?)
-  `);
   const createdAt = Date.now();
-  const result = stmt.run(name, score, createdAt);
-  return { id: Number(result.lastInsertRowid), name, score, createdAt };
+  const entry = { id: nextScoreId, name, score, createdAt };
+  nextScoreId += 1;
+  scores.push(entry);
+  return entry;
 }
 
 function getRankForEntry(entry) {
-  const stmt = db.prepare(`
-    SELECT COUNT(*) AS betterCount
-    FROM scores
-    WHERE score > ?
-       OR (score = ? AND created_at < ?)
-       OR (score = ? AND created_at = ? AND id < ?)
-  `);
-  const row = stmt.get(
-    entry.score,
-    entry.score,
-    entry.createdAt,
-    entry.score,
-    entry.createdAt,
-    entry.id
-  );
-  return Number(row.betterCount) + 1;
+  const sorted = scores.slice().sort(compareEntries);
+  const index = sorted.findIndex((candidate) => candidate.id === entry.id);
+  return index >= 0 ? index + 1 : sorted.length + 1;
 }
 
 async function decodeAudioBufferToMonoFloat32(inputBuffer) {
@@ -206,7 +189,8 @@ app.get("/health", (req, res) => {
   res.json({
     ok: true,
     uptimeSec: Math.round(process.uptime()),
-    dbReady: Boolean(db),
+    storeReady: true,
+    entries: scores.length,
     referenceReady: Boolean(referenceSamples && referenceSamples.length > 0),
   });
 });
@@ -312,7 +296,6 @@ app.use((error, req, res, next) => {
 });
 
 async function start() {
-  initDatabase();
   const referenceBuffer = fs.readFileSync(REFERENCE_AUDIO_PATH);
   referenceSamples = await decodeAudioBufferToMonoFloat32(referenceBuffer);
   if (!referenceSamples || referenceSamples.length === 0) {

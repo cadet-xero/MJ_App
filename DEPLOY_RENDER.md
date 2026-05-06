@@ -41,7 +41,7 @@ After deploy is green:
 
 Expected JSON:
 - `ok: true`
-- `dbReady: true`
+- `storeReady: true`
 - `referenceReady: true`
 
 ## 5. Add Custom Domain
