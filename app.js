@@ -311,6 +311,10 @@ async function decodeArrayBufferToAudioBuffer(arrayBuffer) {
 function compareAudio(referenceBuffer, userBuffer) {
   const refSamples = trimSilence(toMono(referenceBuffer));
   const userSamples = trimSilence(toMono(userBuffer));
+  const activity = getActivityMetrics(userSamples);
+  if (activity.hardSilence) {
+    return 0;
+  }
 
   const durationScore = getDurationScore(refSamples.length / referenceBuffer.sampleRate, userSamples.length / userBuffer.sampleRate);
 
@@ -348,7 +352,14 @@ function compareAudio(referenceBuffer, userBuffer) {
     userPeakCount: structureResult.userPeakCount,
   });
 
-  return Math.round(guardedScore * 100);
+  let finalScore = guardedScore;
+  if (activity.activityWeight < 0.25) {
+    finalScore = Math.min(finalScore, 0.25);
+  } else if (activity.activityWeight < 0.4) {
+    finalScore = Math.min(finalScore, 0.45);
+  }
+
+  return Math.round(finalScore * 100);
 }
 
 function toMono(buffer) {
@@ -426,6 +437,9 @@ function getCorrelationScore(a, b) {
   const a2 = resampleArray(a, target);
   const b2 = resampleArray(b, target);
   const corr = pearsonCorrelation(a2, b2);
+  if (corr === null) {
+    return 0;
+  }
   return clamp((corr + 1) / 2, 0, 1);
 }
 
@@ -452,7 +466,7 @@ function getPitchContour(samples, sampleRate, frameSize = 2048, hop = 512) {
 
 function getPitchScore(referenceContour, userContour) {
   if (referenceContour.length < 2 || userContour.length < 2) {
-    return 0.5;
+    return 0;
   }
 
   const target = Math.min(60, Math.max(referenceContour.length, userContour.length));
@@ -614,6 +628,39 @@ function getRms(samples) {
   return Math.sqrt(sum / samples.length);
 }
 
+function getActivityMetrics(samples) {
+  if (!samples || samples.length === 0) {
+    return { hardSilence: true, activityWeight: 0 };
+  }
+
+  const rms = getRms(samples);
+  let peak = 0;
+  let activeCount = 0;
+  for (let i = 0; i < samples.length; i += 1) {
+    const abs = Math.abs(samples[i]);
+    if (abs > peak) {
+      peak = abs;
+    }
+    if (abs >= 0.015) {
+      activeCount += 1;
+    }
+  }
+
+  const activeRatio = activeCount / samples.length;
+  const hardSilence = peak < 0.02 || rms < 0.003 || activeRatio < 0.008;
+
+  const rmsScore = clamp(rms / 0.02, 0, 1);
+  const activeScore = clamp(activeRatio / 0.12, 0, 1);
+  const peakScore = clamp(peak / 0.15, 0, 1);
+  const activityWeight = clamp(
+    0.5 * rmsScore + 0.35 * activeScore + 0.15 * peakScore,
+    0,
+    1
+  );
+
+  return { hardSilence, activityWeight };
+}
+
 function autoCorrelatePitch(frame, sampleRate, minHz = 120, maxHz = 1200) {
   const minLag = Math.floor(sampleRate / maxHz);
   const maxLag = Math.floor(sampleRate / minHz);
@@ -670,7 +717,7 @@ function resampleArray(values, targetLength) {
 
 function pearsonCorrelation(a, b) {
   if (a.length !== b.length || a.length === 0) {
-    return 0;
+    return null;
   }
 
   const meanA = a.reduce((sum, x) => sum + x, 0) / a.length;
@@ -689,7 +736,7 @@ function pearsonCorrelation(a, b) {
   }
 
   if (denA === 0 || denB === 0) {
-    return 0;
+    return null;
   }
 
   return num / Math.sqrt(denA * denB);
