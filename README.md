@@ -1,6 +1,6 @@
 # HeeHee Score App
 
-This app now uses a backend server so leaderboard save/view works reliably and scores are computed server-side.
+This app uses a backend server so leaderboard save/view works reliably and scores are computed server-side.
 
 ## Run
 
@@ -15,17 +15,19 @@ Frontend files are served from `public/` only.
 
 ## Server-side API
 
-- `POST /api/submit-score`: receives name + recorded audio, computes score on the server, stores result in memory.
+- `POST /api/submit-score`: receives name + recorded audio, computes score on the server, stores result in persistent file storage.
 - `GET /api/leaderboard`: returns top performers.
 - `POST /api/analyze-score`: computes score on server before save.
 
-On the current free-tier setup, leaderboard storage is in-memory (ephemeral).
+Storage details:
+- Uses JSON file storage at `SCORE_DATA_DIR/leaderboard.json`
+- If `SCORE_DATA_DIR` is not set, defaults to local `./data/`
 
 ## Security posture
 
 - Score is calculated on the server from uploaded audio, so clients cannot directly submit arbitrary score values.
 - API endpoints are rate-limited.
-- Static hosting is locked to `public/`, so server code/DB and local paths are not publicly served.
+- Static hosting is locked to `public/`, so server code/store and local paths are not publicly served.
 - Upload type and size are validated server-side.
 
 For public launch, add:
@@ -33,21 +35,26 @@ For public launch, add:
 - Optional: CAPTCHA verification on `submit-score` if abuse becomes a problem.
 - Stricter abuse controls (IP/device limits, bot detection).
 
-## Recommended public hosting
+## Recommended hosting
 
 Good options:
 
-- Render (simple Node deploy + managed Postgres)
+- Render (simple Node deploy + persistent disk or managed DB)
 - Railway (easy Node deploy + managed DB)
 - Fly.io (more control, global regions)
 
-Render quick-start guide for this project:
+Render deployment guide for this project:
 
 - `DEPLOY_RENDER.md`
 
-Free-tier note:
+## Paid Render mode (recommended)
 
-- Current `render.yaml` is configured for Render Free plan (no persistent disk), so leaderboard data can reset.
+This repo is now configured for paid Render Starter + persistent disk:
+- No free-tier sleep behavior
+- Leaderboard persists across deploy/restart
+
+Health check example:
+- `/health` returns `storeReady: true` and `storePath` (expected `/var/data/leaderboard.json` on Render)
 
 Privacy tips:
 

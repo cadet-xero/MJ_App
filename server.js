@@ -12,6 +12,10 @@ const PORT = Number(process.env.PORT || 8080);
 const SAMPLE_RATE = 16000;
 const PUBLIC_DIR = path.join(__dirname, "public");
 const REFERENCE_AUDIO_PATH = path.join(PUBLIC_DIR, "assets", "Michael Jackson Hee Hee.mp3");
+const SCORE_DATA_DIR = process.env.SCORE_DATA_DIR
+  ? path.resolve(process.env.SCORE_DATA_DIR)
+  : path.join(__dirname, "data");
+const SCORE_DATA_FILE = path.join(SCORE_DATA_DIR, "leaderboard.json");
 const MAX_NAME_LENGTH = 40;
 const LEADERBOARD_MAX_SIZE = 10;
 const MAX_UPLOAD_MB = 4;
@@ -46,6 +50,7 @@ const upload = multer({
 let referenceSamples = null;
 let scores = [];
 let nextScoreId = 1;
+let storeReady = false;
 
 function compareEntries(a, b) {
   if (b.score !== a.score) {
@@ -69,11 +74,100 @@ function getTopLeaderboard(limit = LEADERBOARD_MAX_SIZE) {
     }));
 }
 
+function sanitizeName(name) {
+  return String(name || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, MAX_NAME_LENGTH);
+}
+
+function ensureStoreDir() {
+  fs.mkdirSync(SCORE_DATA_DIR, { recursive: true });
+}
+
+function persistStore() {
+  ensureStoreDir();
+  const payload = {
+    version: 1,
+    nextScoreId,
+    scores,
+  };
+  const tempFile = `${SCORE_DATA_FILE}.tmp`;
+  fs.writeFileSync(tempFile, JSON.stringify(payload), "utf8");
+  fs.renameSync(tempFile, SCORE_DATA_FILE);
+}
+
+function loadStore() {
+  ensureStoreDir();
+
+  if (!fs.existsSync(SCORE_DATA_FILE)) {
+    scores = [];
+    nextScoreId = 1;
+    persistStore();
+    storeReady = true;
+    return;
+  }
+
+  const raw = fs.readFileSync(SCORE_DATA_FILE, "utf8");
+  if (!raw.trim()) {
+    scores = [];
+    nextScoreId = 1;
+    persistStore();
+    storeReady = true;
+    return;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    throw new Error(`Could not parse leaderboard file: ${error.message}`);
+  }
+
+  const loadedScores = Array.isArray(parsed && parsed.scores) ? parsed.scores : [];
+  const now = Date.now();
+
+  scores = loadedScores
+    .map((entry) => {
+      const id = Number(entry && entry.id);
+      const score = Number(entry && entry.score);
+      const createdAt = Number(entry && entry.createdAt);
+      const name = sanitizeName(entry && entry.name);
+
+      if (!Number.isFinite(id) || id <= 0 || !name) {
+        return null;
+      }
+
+      const safeScore = Number.isFinite(score)
+        ? Math.max(0, Math.min(100, Math.round(score)))
+        : 0;
+
+      return {
+        id,
+        name,
+        score: safeScore,
+        createdAt: Number.isFinite(createdAt) ? createdAt : now,
+      };
+    })
+    .filter(Boolean);
+
+  const maxId = scores.reduce((max, entry) => (entry.id > max ? entry.id : max), 0);
+  const persistedNext = Number(parsed && parsed.nextScoreId);
+  if (Number.isFinite(persistedNext) && persistedNext > maxId) {
+    nextScoreId = persistedNext;
+  } else {
+    nextScoreId = maxId + 1;
+  }
+
+  storeReady = true;
+}
+
 function insertScore(name, score) {
   const createdAt = Date.now();
   const entry = { id: nextScoreId, name, score, createdAt };
   nextScoreId += 1;
   scores.push(entry);
+  persistStore();
   return entry;
 }
 
@@ -137,13 +231,6 @@ async function decodeAudioBufferToMonoFloat32(inputBuffer) {
   });
 }
 
-function sanitizeName(name) {
-  return String(name || "")
-    .trim()
-    .replace(/\s+/g, " ")
-    .slice(0, MAX_NAME_LENGTH);
-}
-
 app.disable("x-powered-by");
 app.use(helmet({
   crossOriginEmbedderPolicy: false,
@@ -189,8 +276,9 @@ app.get("/health", (req, res) => {
   res.json({
     ok: true,
     uptimeSec: Math.round(process.uptime()),
-    storeReady: true,
+    storeReady,
     entries: scores.length,
+    storePath: SCORE_DATA_FILE,
     referenceReady: Boolean(referenceSamples && referenceSamples.length > 0),
   });
 });
@@ -296,13 +384,17 @@ app.use((error, req, res, next) => {
 });
 
 async function start() {
+  loadStore();
+
   const referenceBuffer = fs.readFileSync(REFERENCE_AUDIO_PATH);
   referenceSamples = await decodeAudioBufferToMonoFloat32(referenceBuffer);
   if (!referenceSamples || referenceSamples.length === 0) {
     throw new Error("Reference audio decode produced no samples.");
   }
+
   app.listen(PORT, () => {
     console.log(`MJ App server running at http://localhost:${PORT}`);
+    console.log(`Leaderboard store file: ${SCORE_DATA_FILE}`);
   });
 }
 
